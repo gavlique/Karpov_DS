@@ -27,6 +27,8 @@ class FeedGet(BaseModel):
     post_id:int
     action:str
     time:datetime
+    user:UserGet
+    post:PostGet
 
     class Config():
         orm_mode = True
