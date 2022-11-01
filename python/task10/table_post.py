@@ -1,11 +1,14 @@
 from database import Base, SessionLocal
-from sqlalchemy import Column, Integer, String, desc
+from sqlalchemy import Column, Integer, String, Text, desc
 
 class Post(Base):
     __tablename__ = 'post'
     id = Column(Integer, primary_key=True)
-    text = Column(String)
-    topic = Column(String)
+    text = Column(Text)
+    topic = Column(String, nullable=True)
+
+    def __repr__(self):
+        return f"{self.id} - {self.topic}"
 
 if __name__ == '__main__':
     session = SessionLocal()
