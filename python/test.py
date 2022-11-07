@@ -1,11 +1,4 @@
-import pandas as pd
+import os
 
-df = pd.DataFrame([
-    ["g", "g0"],
-    ["g", "g1"],
-    ["g", "g2"],
-    ["g", "g3"],
-    ["h", "h0"],
-    ["h", "h1"]
-], columns=["A", "B"])
-print(df.groupby("A").nth[1:-1])
+print(os.path.basename(__file__))
+
