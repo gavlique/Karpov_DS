@@ -46,4 +46,3 @@ def function04(x: torch.Tensor, y: torch.Tensor):
             
         layer.zero_grad()
     return layer
-            
