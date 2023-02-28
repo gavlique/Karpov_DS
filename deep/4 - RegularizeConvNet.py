@@ -83,3 +83,54 @@ def predict_tta(model: nn.Module, loader: DataLoader, device: torch.device, iter
     big_tensor = torch.stack(iter_list, dim=2)
     big_tensor = torch.mean(big_tensor, dim=2)
     return torch.argmax(big_tensor, axis=1)
+
+
+def create_advanced_conv_cifar():
+    return nn.Sequential(  # 32x32
+        nn.Conv2d(3, 64, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(64),
+        nn.ReLU(),
+
+        nn.MaxPool2d(kernel_size=2, stride=2),  # 16x16
+
+        nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(128),
+        nn.ReLU(),
+
+        nn.MaxPool2d(kernel_size=2, stride=2),  # 8x8
+
+        nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(256),
+        nn.ReLU(),
+
+        nn.Conv2d(256, 256, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(256),
+        nn.ReLU(),
+
+        nn.MaxPool2d(kernel_size=2, stride=2),  # 4x4
+
+        nn.Conv2d(256, 512, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(512),
+        nn.ReLU(),
+
+        nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(512),
+        nn.ReLU(),
+
+        nn.MaxPool2d(kernel_size=2, stride=2),  # 2x2
+
+        nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(512),
+        nn.ReLU(),
+
+        nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=True),
+        nn.BatchNorm2d(512),
+        nn.ReLU(),
+
+        nn.MaxPool2d(kernel_size=2, stride=2),  # 1x1
+
+        nn.Flatten(),
+
+        nn.Linear(512, 10)
+
+    )
