@@ -20,7 +20,7 @@ def get_model_path(path: str) -> str:
 
 
 def load_models():
-    model_path = get_model_path(os.getcwd() + "/model")
+    model_path = get_model_path(os.getcwd() + "\ml\\final_project\model")
     # LOAD MODEL HERE PLS :)
     # здесь не указываем параметры, которые были при обучении, в дампе модели все есть
     from_file = CatBoostClassifier()
@@ -57,6 +57,7 @@ def load_features():
     post_features = batch_load_sql("""
         SELECT 
             post_id,
+            text,
             topic
         FROM
             public.post_text_df
@@ -74,10 +75,48 @@ def load_features():
 
     return liked_posts, post_features, user_features
 
+
+model = load_models()
+
+features = load_features()
+
+
 @app.get("/post/recommendations/", response_model=List[PostGet])
 def recommended_posts(
         id: int,
         time: datetime,
         limit: int = 10) -> List[PostGet]:
+    # Юзеры
+    user_features = features[2].loc[features[2].user_id == id]
+    user_features = user_features.drop('user_id', axis=1)
+
+    # Посты
+    content = features[1].copy()
+    post_features = features[1].drop('text', axis=1)
+
+
+    # Присоединяем к фичам по конкретному пользователю
+    add_user_features = dict(zip(user_features.columns, user_features.values[0]))
+    user_posts_features = post_features.assign(**add_user_features)
+    user_posts_features = user_posts_features.set_index('post_id')
+
     # На время забьем хуй
+    
+    # Погнали предсказывать
+    prediction = model.predict_proba(user_posts_features)[:, 1]
+    user_posts_features['prediction'] = prediction
+
+    liked_posts = features[0][features[0].user_id == id].post_id.values
+    user_posts_features = user_posts_features[~user_posts_features.index.isin(liked_posts)]
+
+    recommendations = user_posts_features.sort_values('prediction', ascending=False)[:limit].index
+
+
+    return [
+        PostGet(**{
+            "id": i,
+            "text": content[content.post_id == i].text.values[0],
+            "topic": content[content.post_id == i].topic.values[0]
+        }) for i in recommendations
+    ]
 
