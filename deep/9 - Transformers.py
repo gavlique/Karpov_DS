@@ -10,11 +10,7 @@ class Similarity1(nn.Module):
     def forward(self, encoder_states: torch.Tensor, decoder_state: torch.Tensor):
         # encoder_states.shape = [T, N]
         # decoder_state.shape = [N]
-        z = torch.zeros(encoder_states.shape[0])
-        for i in range(encoder_states.shape[0]):
-            for j in range(encoder_states.shape[1]):
-                z[i] = torch.matmul(encoder_states[i, j] * decoder_state[j])
-        return z
+        return encoder_states @ decoder_state
 
 class Similarity2(nn.Module):
     def __init__(self, encoder_dim: int, decoder_dim: int, intermediate_dim: int):
