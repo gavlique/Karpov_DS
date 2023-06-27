@@ -1,9 +1,10 @@
 import pandas as pd
 from sqlalchemy import create_engine
 import os
+import hashlib
 from loguru import logger
 from catboost import CatBoostClassifier
-from schema import PostGet
+from schema import PostGet, Response
 from typing import List
 from fastapi import FastAPI
 from datetime import datetime
@@ -11,12 +12,20 @@ from datetime import datetime
 app = FastAPI()
 
 
+
+def get_exp_group:
+
+    return control
+
+
 def get_model_path(path: str) -> str:
     # проверяем где выполняется код в лмс, или локально. Немного магии
     if os.environ.get("IS_LMS") == "1":
-        MODEL_PATH = '/workdir/user_input/model'
+        MODEL_PATH = '/workdir/user_input'
     else:
         MODEL_PATH = path
+
+    if 
     return MODEL_PATH
 
 
