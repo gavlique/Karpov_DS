@@ -9,13 +9,14 @@ from typing import List
 from fastapi import FastAPI
 from datetime import datetime
 
+
 app = FastAPI()
 
 
-
-def get_exp_group:
-
-    return control
+def get_exp_group(user_id: int) -> str:
+    user_str = (str(user_id) + 'experiment').encode() # to UTF-8
+    hash_numeric = int(hashlib.md5(user_str).hexdigest(), base=16)
+    return 'control' if hash_numeric % 2 == 0 else 'test'
 
 
 def get_model_path(path: str) -> str:
@@ -24,13 +25,11 @@ def get_model_path(path: str) -> str:
         MODEL_PATH = '/workdir/user_input'
     else:
         MODEL_PATH = path
-
-    if 
     return MODEL_PATH
 
 
-def load_models():
-    model_path = get_model_path(os.getcwd() + r"\model")
+def load_models(version: str) -> CatBoostClassifier:
+    model_path = os.path(get_model_path(os.getcwd()), f"model_{version}")
     # LOAD MODEL HERE PLS :)
     # здесь не указываем параметры, которые были при обучении, в дампе модели все есть
     from_file = CatBoostClassifier()
@@ -88,7 +87,8 @@ def load_features():
     return liked_posts, post_features, user_features
 
 logger.info('loading_models')
-model = load_models()
+model_test = load_models('test')
+model_control = load_models('control')
 logger.info('loading_features')
 features = load_features()
 logger.info('service is ready')
@@ -101,14 +101,37 @@ def recommended_posts(
         limit: int = 10) -> List[PostGet]:
     # Юзеры
     logger.info(f'user_id: {id}')
+    
+    logger.info('getting group and selecting model')
+    exp_group = get_exp_group(id)
+
+    if exp_group == 'test':
+        model = model_test
+    else:
+        model = model_control
+
+
     logger.info('reading features')
     user_features = features[2].loc[features[2].user_id == id]
-    user_features = user_features.drop('user_id', axis=1)
+    if exp_group == 'test':
+        user_features = user_features.drop('user_id', axis=1)
+    else:
+        user_features = user_features.drop([
+            'user_id',
+            'gender'
+        ]
+        , axis=1)
 
     # Посты
     logger.info('dropping columns')
     content = features[1].copy()
-    post_features = features[1].drop('text', axis=1)
+    if exp_group == 'test':
+        post_features = features[1].drop('text', axis=1)
+    else:
+        post_features = features[1][[
+            'post_id',
+            'topic'
+        ]]
 
 
     # Присоединяем к фичам по конкретному пользователю
@@ -118,12 +141,12 @@ def recommended_posts(
     user_posts_features = user_posts_features.set_index('post_id')
 
     # Временные характеристики
-    logger.info('add time info')
-    user_posts_features['hour'] = time.hour
-    user_posts_features['month'] = time.month
+    if exp_group == 'test':
+        logger.info('add time info')
+        user_posts_features['hour'] = time.hour
+        user_posts_features['month'] = time.month
     
     # Погнали предсказывать
-    logger.info(user_posts_features.info())
 
     logger.info('predicting')
     prediction = model.predict_proba(user_posts_features)[:, 1]
@@ -135,10 +158,10 @@ def recommended_posts(
     recommendations = user_posts_features.sort_values('prediction', ascending=False)[:limit].index
 
 
-    return [
+    return Response(exp_group, [
         PostGet(**{
             "id": i,
             "text": content[content.post_id == i].text.values[0],
             "topic": content[content.post_id == i].topic.values[0]
         }) for i in recommendations
-    ]
+    ])
