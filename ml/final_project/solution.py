@@ -12,6 +12,8 @@ from datetime import datetime
 
 app = FastAPI()
 
+LOCAL_PATH = r"D:\Coding\Karpov_DS\ml\final_project"
+
 
 def get_exp_group(user_id: int) -> str:
     user_str = (str(user_id) + 'experiment').encode() # to UTF-8
@@ -29,7 +31,7 @@ def get_model_path(path: str) -> str:
 
 
 def load_models(version: str) -> CatBoostClassifier:
-    model_path = os.path(get_model_path(os.getcwd()), f"model_{version}")
+    model_path = os.path.join(get_model_path(LOCAL_PATH), f"model_{version}")
     # LOAD MODEL HERE PLS :)
     # здесь не указываем параметры, которые были при обучении, в дампе модели все есть
     from_file = CatBoostClassifier()
@@ -94,11 +96,11 @@ features = load_features()
 logger.info('service is ready')
 
 
-@app.get("/post/recommendations/", response_model=List[PostGet])
+@app.get("/post/recommendations/", response_model=Response)
 def recommended_posts(
         id: int,
         time: datetime,
-        limit: int = 10) -> List[PostGet]:
+        limit: int = 10) -> Response:
     # Юзеры
     logger.info(f'user_id: {id}')
     
@@ -157,8 +159,7 @@ def recommended_posts(
 
     recommendations = user_posts_features.sort_values('prediction', ascending=False)[:limit].index
 
-
-    return Response(exp_group, [
+    return Response(exp_group=exp_group, recommendations=[
         PostGet(**{
             "id": i,
             "text": content[content.post_id == i].text.values[0],
