@@ -1,4 +1,4 @@
-
+# function for merging sorted arrays
 def merge(a, b):
 	i, j = 0, 0
 	sorted = [] 
